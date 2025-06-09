@@ -11,6 +11,10 @@ import javafx.scene.control.MenuItem;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 
+import java.awt.*;
+import java.awt.datatransfer.*;
+import java.io.IOException;
+
 
 //import java.awt.*;
 //import java.awt.event.MouseAdapter;
@@ -26,12 +30,15 @@ public class HelloApplication extends Application {
     public void start(Stage stage) {
         this.mainStage = stage;
 
+
+        //TODO: Create a welcome home stage, which the user can anyway close as trayicon will always be listening
         // Build the JavaFX UI (the main window)
         Stage dummyStage = new Stage();
-        dummyStage.initStyle(StageStyle.UTILITY);   // Prevents taskbar icon
-        dummyStage.setOpacity(0);                   // Fully transparent
-        dummyStage.setWidth(0);
-        dummyStage.setHeight(0);
+
+//        dummyStage.initStyle(StageStyle.UTILITY);   // Prevents taskbar icon
+//        dummyStage.setOpacity(0);                   // Fully transparent
+//        dummyStage.setWidth(0);
+//        dummyStage.setHeight(0);
 
         // Pass in the app's main stage, and path to the icon image
         FXTrayIcon icon = new FXTrayIcon(dummyStage);
@@ -54,7 +61,28 @@ public class HelloApplication extends Application {
 
     }
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws IOException, UnsupportedFlavorException {
+        Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
+        final String[] lastClipboardText = {""};
+        Runnable clipboardMonitor = () -> {
+            while (true) {
+                try {
+                    if (clipboard.isDataFlavorAvailable(DataFlavor.stringFlavor)) {
+                        String data = (String) clipboard.getData(DataFlavor.stringFlavor);
+                        if (data != null && !data.equals(lastClipboardText[0])) {
+                            lastClipboardText[0] = data;
+                            System.out.println("Clipboard changed: " + data);
+                        }
+                    }
+                    Thread.sleep(500); // check every 500ms
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        };
+
+        System.out.println("Clipboard watcher started...");
+        new Thread(clipboardMonitor).start();
         launch(args);
     }
 }
